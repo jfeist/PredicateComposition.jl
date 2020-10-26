@@ -15,7 +15,7 @@ OR(f1,f2) = (args...) -> f1(args...) || f2(args...)
 
 ## Numerical comparisons
 
-These functions give functions that compare the output values of different functions. The last three (`MAX`, `MIN`, `SUM`) can take an arbitrary number of arguments.
+These functions give functions that compare the output values of different functions. The last three (`MAX`, `MIN`, `SUM`) can take an arbitrary number of arguments, and create functions that (normally) return numerical, not logical, values.
 
 ```julia
 ISEQUAL(f1,f2) = (args...) -> f1(args...) == f2(args...)
@@ -29,10 +29,9 @@ MIN(fs...) = (args...) -> min((f(args...) for f in fs)...)
 SUM(fs...) = (args...) -> +((f(args...) for f in fs)...)
 ```
 
-
 ## Aliases
 
-For convenient typing, we also define the following aliases:
+For convenient typing, we also define the following aliases using operators that do not have a predefined meaning in Julia.
 
 - `⩓ = AND` (type with `\And<Tab>`)
 - `⩔ = OR` (type with `\Or<Tab>`)
@@ -42,18 +41,13 @@ For convenient typing, we also define the following aliases:
 - `≻ = ISGREATER` (type with `\succ<Tab>`)
 - `⪰ = ISGREATEREQ` (type with `\succeq<Tab>`)
 
-The `MAX` and `MIN` functions are special in that they combine numerical results of different functions, not booleans. For example, if we have functions `count_apples`, `count_oranges`, and `count_lemons` that count the number of apples, oranges, and lemons in some data structure describing a fruit basket, we can do
-```julia
-filter(MAX(count_apples,count_oranges,count_lemons) ⪰ 3, fruit_baskets)
-```
-instead of 
-```julia
-filter(x -> max(count_apples(x),count_oranges(x),count_lemons(x)) ⪰ 3, fruit_baskets)
-```
-to get all fruit baskets with at least three 
+**CAUTION**: The operators `⩓` and `⩔`, although they do not have predefined meaning, have the precedence of addition operators, which is higher than comparison operators like `≻` and `≺`.
+So a statement like `length ≻ 2 ⩓ length ≺ 7` would be parsed as `length ≻ (2 ⩓ length) ≺ 7`, i.e., the function `x -> length(x) > (2(x) && length(x)) < 7(x)`, instead of the probably desired `x -> (length(x) > 2) && (length(x) < 7)`.
+So to logically compose functions like this, you have to explicitly add parentheses, e.g., `(length ≻ 2) ⩓ (length ≺ 7)`.
 
+For a complete list of operator precedence rules, see https://github.com/JuliaLang/julia/blob/master/src/julia-parser.scm.
 
-## Example
+## Examples
 
 ```julia
 length_from_3_to_5 = (length ⪰ 3) ⩓ (length ⪯ 5)
@@ -71,10 +65,12 @@ to
 filter(x -> length(x) ≥ 3 && length(x) ≤ 5, collection)
 ```
 
-
-
-**CAUTION**: The operators `⩓` and `⩔`, although they do not have predefined meaning, have the precedence of addition operators, which is higher than comparison operators like `≻` and `≺`.
-So a statement like `length ≻ 2 ⩓ length ≺ 7` would be parsed as `length ≻ (2 ⩓ length) ≺ 7`, i.e., the function `x -> length(x) > (2(x) && length(x)) < 7(x)`, instead of the probably desired `x -> (length(x) > 2) && (length(x) < 7)`.
-So to logically compose functions like this, you have to explicitly add parentheses, e.g., `(length ≻ 2) ⩓ (length ≺ 7)`.
-
-For a complete list of operator precedence rules, see https://github.com/JuliaLang/julia/blob/master/src/julia-parser.scm.
+Assuming we have functions `count_apples`, `count_oranges`, and `count_lemons` that count the number of apples, oranges, and lemons in some data structure describing a fruit basket, we can do
+```julia
+filter(MAX(count_apples,count_oranges,count_lemons) ⪰ 3, fruit_baskets)
+```
+instead of
+```julia
+filter(x -> max(count_apples(x),count_oranges(x),count_lemons(x)) ⪰ 3, fruit_baskets)
+```
+to get all fruit baskets with at least three apples, three oranges, or three lemons.
