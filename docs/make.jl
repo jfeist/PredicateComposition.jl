@@ -1,5 +1,6 @@
 using PredicateComposition
 using Documenter
+using Pkg; Pkg.activate("..")
 
 makedocs(;
     modules=[PredicateComposition],
@@ -13,6 +14,7 @@ makedocs(;
     ),
     pages=[
         "Home" => "index.md",
+        "Functions" => "functions.md",
     ],
 )
 
